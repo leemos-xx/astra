@@ -12,18 +12,18 @@ public interface Node {
     /**
      * 处理附加日志的请求
      *
-     * @param appendEntriesRequest
+     * @param appendEntries
      * @return
      */
-    Response handleAppendEntriesRequest(Request appendEntriesRequest);
+    Response handleAppendEntries(Request appendEntries);
 
     /**
      * 处理投票请求
      *
-     * @param voteRequest
+     * @param requestVote
      * @return
      */
-    Response handleVoteReuqest(Request voteRequest);
+    Response handleReuqestVote(Request requestVote);
 
     /**
      * 处理客户端请求，仅处在Status.LEADER状态时

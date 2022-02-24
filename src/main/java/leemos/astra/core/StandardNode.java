@@ -8,6 +8,7 @@ import leemos.astra.Node;
 import leemos.astra.NodeConfig;
 import leemos.astra.Request;
 import leemos.astra.Response;
+import leemos.astra.core.election.ElectionManager;
 import leemos.astra.exception.LifecycleException;
 
 /**
@@ -23,6 +24,7 @@ public class StandardNode implements Node, Lifecycle {
     private State state;
     private int heartbeatTimeout;
     private int electionTimeout;
+    private ElectionManager electionManager;
 
     public StandardNode(NodeConfig config) {
         this.config = config;
@@ -36,24 +38,24 @@ public class StandardNode implements Node, Lifecycle {
         // Node初始化时，均为FOLLOWER状态
         this.state = Node.State.FOLLOWER;
 
-        // 通过这两个超时时间来控制election。若当前node的state不是leader，则
-        // 它会每隔heartbeatTimeout毫秒收到leader发送来的心跳消息，证明leader
-        // 目前是存活可用的状态。但如果经过electionTimeout后仍然未收到leader发来
-        // 的心跳消息（electionTimeout >> heartbeatTimeout），则当前node将
-        // 成为candidate，并请求集群内其它节点的投票，如果票选通过，则成为新的leader。
-        this.heartbeatTimeout = Constants.HEARTBEAT_TIMEOUT;
-        // electionTimeout在150ms-300ms之间
-        this.electionTimeout = Constants.ELECTION_TIMEOUT_ORIGIN
-                + new Random().nextInt(Constants.ELECTION_TIMEOUT_BOUND);
+        
+    }
+
+    /*
+     * @see leemos.astra.Lifecycle#start()
+     */
+    @Override
+    public void start() throws LifecycleException {
+        
     }
 
     @Override
-    public Response handleAppendEntriesRequest(Request appendEntriesRequest) {
+    public Response handleAppendEntries(Request appendEntries) {
         return null;
     }
 
     @Override
-    public Response handleVoteReuqest(Request voteRequest) {
+    public Response handleReuqestVote(Request requestVote) {
         return null;
     }
 
