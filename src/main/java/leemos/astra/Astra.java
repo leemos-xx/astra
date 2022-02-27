@@ -1,5 +1,7 @@
 package leemos.astra;
 
+import leemos.astra.server.RpcServer;
+
 /**
  * Astra
  *
@@ -15,8 +17,12 @@ public class Astra {
         this.config = config;
     }
 
-    public void start() {
-
+    public static void main(String[] args) throws LifecycleException {
+        new Astra(null).start();
+    }
+    
+    public void start() throws LifecycleException {
+        new RpcServer().start();
     }
 
     public void stop() {
