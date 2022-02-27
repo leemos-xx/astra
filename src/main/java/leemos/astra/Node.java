@@ -10,6 +10,20 @@ package leemos.astra;
 public interface Node {
 
     /**
+     * 获取Node节点的配置
+     * 
+     * @return
+     */
+    NodeConfig getConfig();
+
+    /**
+     * 获取客户端
+     * 
+     * @return
+     */
+    Client getClient();
+
+    /**
      * 处理附加日志的请求
      *
      * @param appendEntries
@@ -40,44 +54,4 @@ public interface Node {
      */
     void redirectClientRequest(Request clientRequest);
 
-    /**
-     * 枚举Node可能存在的状态
-     *
-     * @author lihao
-     * @date 2022年2月23日
-     * @version 1.0
-     */
-    public static enum State {
-        /**
-         * 跟随者
-         */
-        FOLLOWER(0),
-        /**
-         * 候选者
-         */
-        CANDIDATE(1),
-        /**
-         * 领导者
-         */
-        LEADER(2),
-        /**
-         * 未知，不会出现此种状态
-         */
-        UNKNOWN(-1);
-
-        int status;
-
-        State(int status) {
-            this.status = status;
-        }
-
-        public State parse(int status) {
-            for (State value : State.values()) {
-                if (value.status == status) {
-                    return value;
-                }
-            }
-            return UNKNOWN;
-        }
-    }
 }

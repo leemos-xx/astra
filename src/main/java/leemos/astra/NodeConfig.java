@@ -8,4 +8,8 @@ import lombok.Setter;
 public class NodeConfig {
 
     private String[] peers;
+
+    private int electionTimeout;
+    private int heartbeatTimeout;
+
 }

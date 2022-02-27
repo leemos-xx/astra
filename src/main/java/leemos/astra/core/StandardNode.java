@@ -1,5 +1,6 @@
 package leemos.astra.core;
 
+import leemos.astra.Client;
 import leemos.astra.Lifecycle;
 import leemos.astra.LifecycleException;
 import leemos.astra.Node;
@@ -14,32 +15,32 @@ import leemos.astra.Response;
  * @date 2022年2月23日
  * @version 1.0
  */
-public class StandardNode implements Node, Lifecycle {
+public class StandardNode extends AbstractNode implements Lifecycle {
 
     private NodeConfig config;
-    private State state;
-    private int heartbeatTimeout;
-    private int electionTimeout;
+    private Client client;
 
     public StandardNode(NodeConfig config) {
         this.config = config;
     }
 
-    /*
-     * @see leemos.astra.Lifecycle#init()
-     */
     @Override
-    public void init() throws LifecycleException {
-        // Node初始化时，均为FOLLOWER状态
-        this.state = Node.State.FOLLOWER;
-
+    public NodeConfig getConfig() {
+        return config;
     }
 
-    /*
-     * @see leemos.astra.Lifecycle#start()
-     */
+    @Override
+    public Client getClient() {
+        return client;
+    }
+
     @Override
     public void start() throws LifecycleException {
+        transitionTo(NodeState.FOLLOWER);
+    }
+
+    @Override
+    public void stop() throws LifecycleException {
 
     }
 
