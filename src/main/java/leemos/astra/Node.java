@@ -7,7 +7,7 @@ package leemos.astra;
  * @date 2022年2月23日
  * @version 1.0
  */
-public interface Node {
+public interface Node extends Lifecycle {
 
     /**
      * 获取Node节点的配置
@@ -21,7 +21,7 @@ public interface Node {
      * 
      * @return
      */
-    Clients getClient();
+    Clients getClients();
 
     /**
      * 处理附加日志的请求

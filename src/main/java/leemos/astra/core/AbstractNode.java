@@ -3,6 +3,9 @@ package leemos.astra.core;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import leemos.astra.Node;
 
 /**
@@ -14,7 +17,9 @@ import leemos.astra.Node;
  */
 public abstract class AbstractNode implements Node {
 
-    private NodeState state = NodeState.FOLLOWER;
+    protected static final Logger logger = LoggerFactory.getLogger(Node.class);
+    
+    private NodeState state;
     private Timer electionTimer = new Timer();
     private Timer heartbeatTimer = new Timer();
 
@@ -32,7 +37,7 @@ public abstract class AbstractNode implements Node {
             resignFromFollower();
         }
 
-        switch (state) {
+        switch (newState) {
         case FOLLOWER:
             transitionToFollower();
 
@@ -63,7 +68,7 @@ public abstract class AbstractNode implements Node {
     }
 
     private void transitionToCandidate() {
-        getClient().requestVote();
+        getClients().requestVote();
     }
 
     // FIXME 是否需要此方法
@@ -90,7 +95,7 @@ public abstract class AbstractNode implements Node {
 
         @Override
         public void run() {
-            node.getClient().heartbeat();
+            node.getClients().heartbeat();
         }
 
     }
