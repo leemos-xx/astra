@@ -7,6 +7,7 @@ import leemos.astra.Node;
 import leemos.astra.NodeConfig;
 import leemos.astra.Request;
 import leemos.astra.Response;
+import leemos.astra.Server;
 
 /**
  * StandardNode {@link Node}的标准实现
@@ -18,6 +19,7 @@ import leemos.astra.Response;
 public class StandardNode extends AbstractNode implements Lifecycle {
 
     private NodeConfig config;
+    private Server server;
     private Client client;
 
     public StandardNode(NodeConfig config) {
@@ -36,12 +38,16 @@ public class StandardNode extends AbstractNode implements Lifecycle {
 
     @Override
     public void start() throws LifecycleException {
+        server.start();
+        client.start();
+
         transitionTo(NodeState.FOLLOWER);
     }
 
     @Override
     public void stop() throws LifecycleException {
-
+        client.stop();
+        server.stop();
     }
 
     @Override
