@@ -12,7 +12,19 @@
 			<artifactId>lombok</artifactId>
 			<version>1.18.22</version>
 		</dependency>
+		<dependency>
+			<groupId>leemos</groupId>
+			<artifactId>orion-connector-rpc</artifactId>
+			<version>release-1.0.0</version>
+		</dependency>
 	</dependencies>
+
+	<distributionManagement>
+		<repository>
+			<id>test</id>
+			<url>http://43.132.189.7:8081/repository/test-releases/</url>
+		</repository>
+	</distributionManagement>
 
 	<build>
 		<finalName>astra</finalName>
