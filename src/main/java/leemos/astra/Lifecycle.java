@@ -10,14 +10,6 @@ package leemos.astra;
 public interface Lifecycle {
 
     /**
-     * 初始化阶段
-     *
-     * @throws LifecycleException
-     */
-    default void init() throws LifecycleException {
-    }
-
-    /**
      * 启动阶段
      *
      * @throws LifecycleException
@@ -33,11 +25,4 @@ public interface Lifecycle {
     default void stop() throws LifecycleException {
     }
 
-    /**
-     * 销毁阶段
-     *
-     * @throws LifecycleException
-     */
-    default void destroy() throws LifecycleException {
-    }
 }
