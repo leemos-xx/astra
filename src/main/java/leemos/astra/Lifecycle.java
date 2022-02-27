@@ -1,7 +1,5 @@
 package leemos.astra;
 
-import leemos.astra.exception.LifecycleException;
-
 /**
  * 定义生命周期的各阶段
  *

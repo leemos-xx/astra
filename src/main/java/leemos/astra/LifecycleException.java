@@ -1,4 +1,4 @@
-package leemos.astra.exception;
+package leemos.astra;
 
 /**
  * 生命周期阶段内出现的异常。
