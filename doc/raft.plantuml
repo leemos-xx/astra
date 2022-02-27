@@ -1,0 +1,9 @@
+@startuml
+
+title Raft
+
+participant "Follow" as F
+participant "Candidate" as C
+participant "Leader" as L
+
+@enduml
