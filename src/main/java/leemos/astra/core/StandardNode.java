@@ -1,6 +1,6 @@
 package leemos.astra.core;
 
-import leemos.astra.Client;
+import leemos.astra.Clients;
 import leemos.astra.Lifecycle;
 import leemos.astra.LifecycleException;
 import leemos.astra.Node;
@@ -20,7 +20,7 @@ public class StandardNode extends AbstractNode implements Lifecycle {
 
     private NodeConfig config;
     private Server server;
-    private Client client;
+    private Clients client;
 
     public StandardNode(NodeConfig config) {
         this.config = config;
@@ -32,7 +32,7 @@ public class StandardNode extends AbstractNode implements Lifecycle {
     }
 
     @Override
-    public Client getClient() {
+    public Clients getClient() {
         return client;
     }
 

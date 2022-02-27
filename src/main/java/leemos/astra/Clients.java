@@ -1,6 +1,6 @@
 package leemos.astra;
 
-public interface Client extends Lifecycle {
+public interface Clients extends Lifecycle {
 
     void heartbeat();
 

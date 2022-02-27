@@ -21,7 +21,7 @@ public interface Node {
      * 
      * @return
      */
-    Client getClient();
+    Clients getClient();
 
     /**
      * 处理附加日志的请求

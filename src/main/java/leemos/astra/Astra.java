@@ -1,6 +1,6 @@
 package leemos.astra;
 
-import leemos.astra.server.RpcServer;
+import leemos.astra.rpc.RpcServer;
 
 /**
  * Astra

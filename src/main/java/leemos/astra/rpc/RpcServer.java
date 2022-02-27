@@ -1,4 +1,4 @@
-package leemos.astra.server;
+package leemos.astra.rpc;
 
 import java.util.concurrent.CountDownLatch;
 
