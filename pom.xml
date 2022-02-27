@@ -17,6 +17,11 @@
 			<artifactId>orion-connector-rpc</artifactId>
 			<version>release-1.0.0</version>
 		</dependency>
+		<dependency>
+			<groupId>leemos</groupId>
+			<artifactId>orion-client-rpc</artifactId>
+			<version>release-1.0.0</version>
+		</dependency>
 	</dependencies>
 
 	<distributionManagement>
