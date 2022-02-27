@@ -1,6 +1,6 @@
 package leemos.astra;
 
-import leemos.astra.core.StandardNode;
+import leemos.astra.node.StandardNode;
 import leemos.astra.rpc.RpcClients;
 import leemos.astra.rpc.RpcServer;
 

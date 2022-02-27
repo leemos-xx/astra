@@ -1,4 +1,4 @@
-package leemos.astra.core;
+package leemos.astra.node;
 
 import leemos.astra.Clients;
 import leemos.astra.LifecycleException;
