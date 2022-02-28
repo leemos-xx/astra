@@ -8,4 +8,11 @@ participant "Leader" as l
 
 autonumber
 
+f -> f: wait for election timeout
+l -> f: heartbeat(term,logs[])
+f -> f: reset election timeout
+l -> l: dead...
+f -> f: wait for election timeout
+f -[#red]> c: transition to candidate
+
 @enduml
