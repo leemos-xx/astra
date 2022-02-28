@@ -2,8 +2,10 @@
 
 title Raft
 
-participant "Follow" as F
-participant "Candidate" as C
-participant "Leader" as L
+participant "Follow" as f
+participant "Candidate" as c
+participant "Leader" as l
+
+autonumber
 
 @enduml
