@@ -2,17 +2,31 @@
 
 title Raft
 
-participant "Follow" as f
+participant "Follow1" as f1
+participant "Follow2" as f2
 participant "Candidate" as c
 participant "Leader" as l
 
 autonumber
 
-f -> f: wait for election timeout
-l -> f: heartbeat(term,logs[])
-f -> f: reset election timeout
+note over f1, c
+a. follow -> candidate
+end note
+f1 -> f1: wait for election timeout
+f2 -> f2: wait for election timeout
+l -> f1: heartbeat(term,logs[])
+l -> f2: heartbeat(term,logs[])
+f1 -> f1: reset election timeout
+f2 -> f2: reset election timeout
 l -> l: dead...
-f -> f: wait for election timeout
-f -[#red]> c: transition to candidate
+f1 -> f1: wait for election timeout
+f2 -> f2: wait for election timeout
+f1 -[#red]> c: transition to candidate, term + 1
+
+note over f1, c
+b. candidate -> leader
+end note
+c -> f1: request vote(term, )
+
 
 @enduml
