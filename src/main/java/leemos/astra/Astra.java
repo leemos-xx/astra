@@ -1,8 +1,8 @@
 package leemos.astra;
 
 import leemos.astra.node.StandardNode;
-import leemos.astra.rpc.RpcClients;
-import leemos.astra.rpc.RpcServer;
+import leemos.astra.rpc.clients.StandardClient;
+import leemos.astra.rpc.server.StandardServer;
 
 /**
  * Astra 入口程序
@@ -15,8 +15,8 @@ public class Astra {
 
     private NodeConfig config;
     private Node node;
-    private RpcServer server;
-    private RpcClients clients;
+    private StandardServer server;
+    private StandardClient clients;
 
     public Astra(NodeConfig config) {
         this.config = config;
@@ -28,8 +28,8 @@ public class Astra {
     }
 
     public void start() throws LifecycleException {
-        server = new RpcServer();
-        clients = new RpcClients(config.getPeers());
+        server = new StandardServer();
+        clients = new StandardClient(config.getPeers());
 
         node = new StandardNode(config, server, clients);
 

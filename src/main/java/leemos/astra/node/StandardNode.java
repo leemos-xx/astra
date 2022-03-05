@@ -1,14 +1,14 @@
 package leemos.astra.node;
 
-import leemos.astra.Clients;
+import leemos.astra.Client;
 import leemos.astra.LifecycleException;
 import leemos.astra.Node;
 import leemos.astra.NodeConfig;
 import leemos.astra.Request;
 import leemos.astra.Response;
 import leemos.astra.Server;
-import leemos.astra.rpc.RpcClients;
-import leemos.astra.rpc.RpcServer;
+import leemos.astra.rpc.clients.StandardClient;
+import leemos.astra.rpc.server.StandardServer;
 
 /**
  * StandardNode {@link Node}的标准实现
@@ -21,9 +21,9 @@ public class StandardNode extends AbstractNode {
 
     private NodeConfig config;
     private Server server;
-    private Clients clients;
+    private Client clients;
 
-    public StandardNode(NodeConfig config, RpcServer server, RpcClients clients) {
+    public StandardNode(NodeConfig config, StandardServer server, StandardClient clients) {
         this.config = config;
         this.server = server;
         this.clients = clients;
@@ -35,7 +35,7 @@ public class StandardNode extends AbstractNode {
     }
 
     @Override
-    public Clients getClients() {
+    public Client getClients() {
         return clients;
     }
 

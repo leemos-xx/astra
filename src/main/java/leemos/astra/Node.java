@@ -21,7 +21,7 @@ public interface Node extends Lifecycle {
      * 
      * @return
      */
-    Clients getClients();
+    Client getClients();
 
     /**
      * 处理附加日志的请求
