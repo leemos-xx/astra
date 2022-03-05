@@ -63,7 +63,7 @@ public abstract class StatefulNode implements Node {
         if (this.state == newState) {
             return;
         }
-        
+
         if (this.state == NodeState.LEADER) {
             resignFromLeader();
         }
@@ -87,7 +87,7 @@ public abstract class StatefulNode implements Node {
         default:
             break;
         }
-        
+
         consensus.voteFor(null);
         this.state = newState;
     }
@@ -115,10 +115,12 @@ public abstract class StatefulNode implements Node {
                 RequestVoteReq request = RequestVoteReq.builder().term(consensus.getCurrentTerm()).candidateId(getId())
                         .lastLogIndex(log.last().getLogIndex()).lastLogTerm(log.last().getTerm()).build();
                 RequestVoteResp response = client.requestVote(request);
+
                 if (response.getTerm() > consensus.getCurrentTerm()) {
                     conversionTo(NodeState.FOLLOWER);
                     break;
                 }
+
                 if (response.isVoteGranted()) {
                     votes++;
                 }
@@ -168,6 +170,7 @@ public abstract class StatefulNode implements Node {
                         .prevLogIndex(log.last().getLogIndex()).prevLogTerm(log.last().getTerm())
                         .entries(new LogEntry[0]).leaderCommit(consensus.getCommitIndex()).build();
                 AppendEntriesResp response = getClients()[i].heartbeat(request);
+
                 if (response.getTerm() > consensus.getCurrentTerm()) {
                     conversionTo(NodeState.FOLLOWER);
                     break;
