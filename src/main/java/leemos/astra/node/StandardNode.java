@@ -24,13 +24,29 @@ import leemos.astra.rpc.server.StandardServer;
 public class StandardNode extends StatefulNode {
 
     private static final Logger logger = LoggerFactory.getLogger(StandardNode.class);
+    private static volatile StandardNode singleton;
 
+    public static StandardNode getInstance() {
+        if (singleton == null) {
+            synchronized (StandardNode.class) {
+                if (singleton == null) {
+                    singleton = new StandardNode(NodeConfig.builder()
+                            .peers(new String[] { "localhost:10880" })
+                            .electionTimeout(10000)
+                            .heartbeatTimeout(30000)
+                            .build());
+                }
+            }
+        }
+        return singleton;
+    }
+    
     private NodeConfig config;
     private Server server;
     private Client[] clients;
     private ExecutorService executor;
 
-    public StandardNode(NodeConfig config) {
+    private StandardNode(NodeConfig config) {
         this.config = config;
     }
 

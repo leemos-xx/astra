@@ -13,6 +13,7 @@ import leemos.astra.Consensus;
 import leemos.astra.Log;
 import leemos.astra.LogEntry;
 import leemos.astra.Node;
+import leemos.astra.StateMachine;
 import leemos.astra.rpc.AppendEntriesReq;
 import leemos.astra.rpc.AppendEntriesResp;
 import leemos.astra.rpc.RequestVoteReq;
@@ -35,6 +36,7 @@ public abstract class StatefulNode implements Node {
 
     private Consensus consensus;
     private Log log;
+    private StateMachine stateMachine;
 
     private Lock lock = new ReentrantLock();
 
@@ -42,10 +44,26 @@ public abstract class StatefulNode implements Node {
         consensus = new Consensus(getConfig().getPeers().length);
     }
 
+    @Override
+    public Consensus getConsensus() {
+        return consensus;
+    }
+
+    @Override
+    public Log getLog() {
+        return log;
+    }
+
+    @Override
+    public StateMachine getStateMachine() {
+        return stateMachine;
+    }
+
     protected void conversionTo(NodeState newState) {
         if (this.state == newState) {
             return;
         }
+        
         if (this.state == NodeState.LEADER) {
             resignFromLeader();
         }
@@ -69,7 +87,8 @@ public abstract class StatefulNode implements Node {
         default:
             break;
         }
-
+        
+        consensus.voteFor(null);
         this.state = newState;
     }
 
@@ -93,12 +112,8 @@ public abstract class StatefulNode implements Node {
             ;
             int votes = 1;
             for (Client client : getClients()) {
-                RequestVoteReq request = RequestVoteReq.builder()
-                        .term(consensus.getCurrentTerm())
-                        .candidateId(getId())
-                        .lastLogIndex(log.last().getLogIndex())
-                        .lastLogTerm(log.last().getTerm())
-                        .build();
+                RequestVoteReq request = RequestVoteReq.builder().term(consensus.getCurrentTerm()).candidateId(getId())
+                        .lastLogIndex(log.last().getLogIndex()).lastLogTerm(log.last().getTerm()).build();
                 RequestVoteResp response = client.requestVote(request);
                 if (response.getTerm() > consensus.getCurrentTerm()) {
                     conversionTo(NodeState.FOLLOWER);
@@ -149,14 +164,9 @@ public abstract class StatefulNode implements Node {
             }
 
             for (int i = 0; i < getClients().length; i++) {
-                AppendEntriesReq request = AppendEntriesReq.builder()
-                        .term(consensus.getCurrentTerm())
-                        .leaderId(getId())
-                        .prevLogIndex(log.last().getLogIndex())
-                        .prevLogTerm(log.last().getTerm())
-                        .entries(new LogEntry[0])
-                        .leaderCommit(consensus.getCommitIndex())
-                        .build();
+                AppendEntriesReq request = AppendEntriesReq.builder().term(consensus.getCurrentTerm()).leaderId(getId())
+                        .prevLogIndex(log.last().getLogIndex()).prevLogTerm(log.last().getTerm())
+                        .entries(new LogEntry[0]).leaderCommit(consensus.getCommitIndex()).build();
                 AppendEntriesResp response = getClients()[i].heartbeat(request);
                 if (response.getTerm() > consensus.getCurrentTerm()) {
                     conversionTo(NodeState.FOLLOWER);

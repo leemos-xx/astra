@@ -37,6 +37,10 @@ public class Consensus {
         this.voteFor = candidateId;
     }
 
+    public boolean voting() {
+        return this.voteFor == null;
+    }
+
     public long getCommitIndex() {
         return commitIndex;
     }

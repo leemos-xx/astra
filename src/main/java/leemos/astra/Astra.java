@@ -11,24 +11,14 @@ import leemos.astra.node.StandardNode;
  */
 public class Astra {
 
-    private NodeConfig config;
     private Node node;
 
-    public Astra(NodeConfig config) {
-        this.config = config;
-    }
-
     public static void main(String[] args) throws LifecycleException {
-        new Astra(NodeConfig.builder()
-                .peers(new String[] { "localhost:10880" })
-                .electionTimeout(10000)
-                .heartbeatTimeout(30000)
-                .build())
-        .start();
+        new Astra().start();
     }
 
     public void start() throws LifecycleException {
-        node = new StandardNode(config);
+        node = StandardNode.getInstance();
         node.start();
     }
 
@@ -36,9 +26,5 @@ public class Astra {
         if (node != null) {
             node.stop();
         }
-    }
-
-    public NodeConfig getConfig() {
-        return config;
     }
 }

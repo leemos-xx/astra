@@ -27,4 +27,22 @@ public interface Node extends Lifecycle {
      * @return
      */
     Client[] getClients();
+    
+    /**
+     * 获取日志模块
+     * @return
+     */
+    Log getLog();
+    
+    /**
+     * 获取一致性模块
+     * @return
+     */
+    Consensus getConsensus();
+    
+    /**
+     * 获取状态机模块
+     * @return
+     */
+    StateMachine getStateMachine();
 }
