@@ -21,7 +21,7 @@ f2 -> f2: reset election timeout
 l -> l: dead...
 f1 -> f1: wait for election timeout
 f2 -> f2: wait for election timeout
-f1 -[#red]> c: transition to candidate, term + 1
+f1 -[#red]> c: conversion to candidate, term + 1
 
 note over f1, c
 b. candidate -> leader

@@ -1,11 +1,7 @@
 package leemos.astra.rpc.clients;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import leemos.astra.Client;
 import leemos.astra.LifecycleException;
-import leemos.astra.Node;
 import leemos.astra.rpc.AppendEntriesReq;
 import leemos.astra.rpc.AppendEntriesResp;
 import leemos.astra.rpc.RaftScene;
@@ -18,8 +14,6 @@ import leemos.orion.client.proxy.JdkProxyInvoker;
 import leemos.orion.client.rpc.OrionClient;
 
 public class StandardClient implements Client {
-
-    private static final Logger logger = LoggerFactory.getLogger(Node.class);
 
     private String peer;
     private OrionClient client;

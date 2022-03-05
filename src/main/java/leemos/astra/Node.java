@@ -15,43 +15,4 @@ public interface Node extends Lifecycle {
      * @return
      */
     NodeConfig getConfig();
-
-    /**
-     * 获取客户端
-     * 
-     * @return
-     */
-    Client getClients();
-
-    /**
-     * 处理附加日志的请求
-     *
-     * @param appendEntries
-     * @return
-     */
-    Response handleAppendEntries(Request appendEntries);
-
-    /**
-     * 处理投票请求
-     *
-     * @param requestVote
-     * @return
-     */
-    Response handleReuqestVote(Request requestVote);
-
-    /**
-     * 处理客户端请求，仅处在Status.LEADER状态时
-     *
-     * @param clientRequest
-     * @return
-     */
-    Response handleClientRequest(Request clientRequest);
-
-    /**
-     * 将客户端请求重定向到Leader，处在Status.FOLLOWER & Status.CANDIDATE状态时
-     *
-     * @param clientRequest
-     */
-    void redirectClientRequest(Request clientRequest);
-
 }
