@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import leemos.astra.Client;
+import leemos.astra.Consensus;
 import leemos.astra.Log;
 import leemos.astra.LogEntry;
 import leemos.astra.Node;
@@ -32,15 +33,14 @@ public abstract class StatefulNode implements Node {
     private Timer electionTimer = new Timer();
     private Timer heartbeatTimer = new Timer();
 
-    private int currentTerm;
-    private String voteFor;
+    private Consensus consensus;
     private Log log;
-    private long commitIndex;
-    private long lastApplied;
-    private long[] nextIndex;
-    private long[] matchIndex;
 
     private Lock lock = new ReentrantLock();
+
+    public StatefulNode() {
+        consensus = new Consensus(getConfig().getPeers().length);
+    }
 
     protected void conversionTo(NodeState newState) {
         if (this.state == newState) {
@@ -86,16 +86,21 @@ public abstract class StatefulNode implements Node {
         try {
             lock.lock();
             // 切换为候选人身份后，将term自增1，并发起新一轮选举
-            currentTerm++;
+            consensus.increaseTeam();
 
             // 投票给自己，并争取其它节点的投票
-            voteFor = getId();
+            consensus.voteFor(getId());
+            ;
             int votes = 1;
             for (Client client : getClients()) {
-                RequestVoteReq request = RequestVoteReq.builder().term(currentTerm).candidateId(getId())
-                        .lastLogIndex(log.last().getLogIndex()).lastLogTerm(log.last().getTerm()).build();
+                RequestVoteReq request = RequestVoteReq.builder()
+                        .term(consensus.getCurrentTerm())
+                        .candidateId(getId())
+                        .lastLogIndex(log.last().getLogIndex())
+                        .lastLogTerm(log.last().getTerm())
+                        .build();
                 RequestVoteResp response = client.requestVote(request);
-                if (response.getTerm() > currentTerm) {
+                if (response.getTerm() > consensus.getCurrentTerm()) {
                     conversionTo(NodeState.FOLLOWER);
                     break;
                 }
@@ -119,8 +124,8 @@ public abstract class StatefulNode implements Node {
         try {
             lock.lock();
 
-            currentTerm--;
-            voteFor = null;
+            consensus.decreaseTerm();
+            consensus.voteFor(null);
         } finally {
             lock.unlock();
         }
@@ -144,17 +149,22 @@ public abstract class StatefulNode implements Node {
             }
 
             for (int i = 0; i < getClients().length; i++) {
-                AppendEntriesReq request = AppendEntriesReq.builder().term(currentTerm).leaderId(getId())
-                        .prevLogIndex(log.last().getLogIndex()).prevLogTerm(log.last().getTerm())
-                        .entries(new LogEntry[0]).leaderCommit(commitIndex).build();
+                AppendEntriesReq request = AppendEntriesReq.builder()
+                        .term(consensus.getCurrentTerm())
+                        .leaderId(getId())
+                        .prevLogIndex(log.last().getLogIndex())
+                        .prevLogTerm(log.last().getTerm())
+                        .entries(new LogEntry[0])
+                        .leaderCommit(consensus.getCommitIndex())
+                        .build();
                 AppendEntriesResp response = getClients()[i].heartbeat(request);
-                if (response.getTerm() > currentTerm) {
+                if (response.getTerm() > consensus.getCurrentTerm()) {
                     conversionTo(NodeState.FOLLOWER);
                     break;
                 }
 
                 if (response.isSuccess()) {
-                    nextIndex[i] = commitIndex;
+                    consensus.updateCommit(i, consensus.getCommitIndex());
                 } else {
                     // FIXME log replication
                 }
