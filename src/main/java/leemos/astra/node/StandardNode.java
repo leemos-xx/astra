@@ -35,6 +35,11 @@ public class StandardNode extends StatefulNode {
     }
 
     @Override
+    public String getId() {
+        return config.getId();
+    }
+
+    @Override
     public NodeConfig getConfig() {
         return config;
     }
@@ -75,4 +80,8 @@ public class StandardNode extends StatefulNode {
         server.stop();
     }
 
+    @Override
+    public Client[] getClients() {
+        return clients;
+    }
 }

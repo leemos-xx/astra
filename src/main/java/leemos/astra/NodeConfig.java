@@ -9,6 +9,7 @@ import lombok.Setter;
 @Builder
 public class NodeConfig {
 
+    private String id;
     private String[] peers;
 
     private int electionTimeout;

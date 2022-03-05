@@ -10,9 +10,21 @@ package leemos.astra;
 public interface Node extends Lifecycle {
 
     /**
+     * 获取节点Id
+     * @return
+     */
+    String getId();
+    
+    /**
      * 获取Node节点的配置
      * 
      * @return
      */
     NodeConfig getConfig();
+    
+    /**
+     * 获取所有对等节点
+     * @return
+     */
+    Client[] getClients();
 }

@@ -23,6 +23,12 @@ public interface Log {
      * @return
      */
     public LogEntry read(long logIndex);
+    
+    /**
+     * 获取最新的日志
+     * @return
+     */
+    public LogEntry last();
 
     /**
      * 从指定索引位置开始截断日志
