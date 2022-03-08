@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import leemos.astra.Client;
+import leemos.astra.Consensus;
 import leemos.astra.LifecycleException;
 import leemos.astra.Node;
 import leemos.astra.NodeConfig;
@@ -30,11 +31,15 @@ public class StandardNode extends StatefulNode {
         if (singleton == null) {
             synchronized (StandardNode.class) {
                 if (singleton == null) {
-                    singleton = new StandardNode(NodeConfig.builder()
-                            .peers(new String[] { "localhost:10880" })
-                            .electionTimeout(10000)
-                            .heartbeatTimeout(30000)
-                            .build());
+                    NodeConfig config = NodeConfig.builder()
+                            .peers(new String[] { "localhost:10882", "localhost:10881" })
+                            .electionTimeout(60000)
+                            .heartbeatTimeout(10000)
+                            .build();
+                    singleton = new StandardNode(config);
+                    singleton.setConsensus(new Consensus(config.getPeers().length));
+                    singleton.setLog(new StandardLog());
+                    singleton.setStateMachine(new StandardStateMachine());
                 }
             }
         }

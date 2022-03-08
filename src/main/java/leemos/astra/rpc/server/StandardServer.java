@@ -13,7 +13,7 @@ import leemos.astra.Server;
  * @version 1.0
  */
 public class StandardServer implements Server {
-    private StandardServer server = new StandardServer();
+    private leemos.orion.core.StandardServer server = new leemos.orion.core.StandardServer();
     private CountDownLatch latch = new CountDownLatch(1);
 
     @Override

@@ -40,8 +40,8 @@ public abstract class StatefulNode implements Node {
 
     private Lock lock = new ReentrantLock();
 
-    public StatefulNode() {
-        consensus = new Consensus(getConfig().getPeers().length);
+    public void setConsensus(Consensus consensus) {
+        this.consensus = consensus;
     }
 
     @Override
@@ -49,9 +49,17 @@ public abstract class StatefulNode implements Node {
         return consensus;
     }
 
+    public void setLog(Log log) {
+        this.log = log;
+    }
+
     @Override
     public Log getLog() {
         return log;
+    }
+
+    public void setStateMachine(StateMachine stateMachine) {
+        this.stateMachine = stateMachine;
     }
 
     @Override
@@ -94,6 +102,7 @@ public abstract class StatefulNode implements Node {
     }
 
     private void conversionToLeader() {
+        logger.info("Node :-> Leader");
         int heartbeatTimeout = getConfig().getHeartbeatTimeout();
         heartbeatTimer.scheduleAtFixedRate(new Heartbeat(), 0, heartbeatTimeout);
     }
@@ -103,6 +112,7 @@ public abstract class StatefulNode implements Node {
     }
 
     private void conversionToCandidate() {
+        logger.info("Node :-> Candidate");
         try {
             lock.lock();
             // 切换为候选人身份后，将term自增1，并发起新一轮选举
@@ -128,7 +138,7 @@ public abstract class StatefulNode implements Node {
             }
 
             // 是否获得超过半数的投票
-            if (votes > getConfig().getPeers().length / 2) {
+            if (votes > (getConfig().getPeers().length + 1) / 2) {
                 conversionTo(NodeState.LEADER);
             } else {
                 conversionTo(NodeState.FOLLOWER);
@@ -150,6 +160,8 @@ public abstract class StatefulNode implements Node {
     }
 
     private void conversionToFollower() {
+        logger.info("Node :-> Follower");
+        
         int electionTimeout = getConfig().getElectionTimeout();
         electionTimer.scheduleAtFixedRate(new Election(), electionTimeout, electionTimeout);
     }

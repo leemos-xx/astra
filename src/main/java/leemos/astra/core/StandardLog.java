@@ -28,6 +28,9 @@ public class StandardLog implements Log {
 
     @Override
     public synchronized LogEntry last() {
+        if (entries.size() == 0) {
+            return LogEntry.builder().term(0).logIndex(0).build();
+        }
         return entries.get(entries.size() - 1);
     }
 

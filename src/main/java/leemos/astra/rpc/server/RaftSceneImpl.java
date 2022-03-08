@@ -40,6 +40,9 @@ public class RaftSceneImpl implements RaftScene {
         }
 
         consensus.voteFor(request.getCandidateId());
+
+        StandardNode.getInstance().conversionTo(NodeState.FOLLOWER);
+
         return RequestVoteResp.builder().term(consensus.getCurrentTerm()).voteGranted(true).build();
     }
 

@@ -1,5 +1,7 @@
 package leemos.astra.rpc;
 
+import java.io.Serializable;
+
 import leemos.astra.LogEntry;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +17,9 @@ import lombok.Setter;
 @Setter
 @Getter
 @Builder
-public class AppendEntriesReq {
+public class AppendEntriesReq implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private int term;
     private String leaderId;
     private long prevLogIndex;
