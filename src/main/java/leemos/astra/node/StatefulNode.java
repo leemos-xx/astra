@@ -59,7 +59,8 @@ public abstract class StatefulNode implements Node {
         return stateMachine;
     }
 
-    protected void conversionTo(NodeState newState) {
+    @Override
+    public void conversionTo(NodeState newState) {
         if (this.state == newState) {
             return;
         }
@@ -109,7 +110,7 @@ public abstract class StatefulNode implements Node {
 
             // 投票给自己，并争取其它节点的投票
             consensus.voteFor(getId());
-            ;
+            
             int votes = 1;
             for (Client client : getClients()) {
                 RequestVoteReq request = RequestVoteReq.builder().term(consensus.getCurrentTerm()).candidateId(getId())

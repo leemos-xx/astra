@@ -3,6 +3,8 @@ package leemos.astra.rpc.server;
 import leemos.astra.Consensus;
 import leemos.astra.Log;
 import leemos.astra.LogEntry;
+import leemos.astra.StateMachine;
+import leemos.astra.node.NodeState;
 import leemos.astra.node.StandardNode;
 import leemos.astra.rpc.AppendEntriesReq;
 import leemos.astra.rpc.AppendEntriesResp;
@@ -31,13 +33,13 @@ public class RaftSceneImpl implements RaftScene {
             return RequestVoteResp.builder().term(consensus.getCurrentTerm()).voteGranted(false).build();
         }
 
-        // FIXME 整理逻辑：如果请求中的日志比当前节点旧，则投反对票
-        if (request.getLastLogIndex() < log.last().getLogIndex() || request.getLastLogTerm() < log.last().getTerm()) {
+        // 如果Candidate的日志比当前节点旧，则投反对票
+        if (request.getLastLogTerm() < log.last().getTerm() || (request.getLastLogTerm() == log.last().getTerm()
+                && request.getLastLogIndex() < log.last().getLogIndex())) {
             return RequestVoteResp.builder().term(consensus.getCurrentTerm()).voteGranted(false).build();
         }
 
         consensus.voteFor(request.getCandidateId());
-
         return RequestVoteResp.builder().term(consensus.getCurrentTerm()).voteGranted(true).build();
     }
 
@@ -46,20 +48,28 @@ public class RaftSceneImpl implements RaftScene {
     public AppendEntriesResp appendEntries(AppendEntriesReq request) {
         Consensus consensus = StandardNode.getInstance().getConsensus();
         Log log = StandardNode.getInstance().getLog();
-        
+        StateMachine stateMachine = StandardNode.getInstance().getStateMachine();
+
         // 如果心跳中Leader的任期比当前节点小，则通知Leader退位为Follower
         if (request.getTerm() < consensus.getCurrentTerm()) {
             return AppendEntriesResp.builder().term(consensus.getCurrentTerm()).success(false).build();
         }
-        
-        // 如果请求中的日志比当前节点旧，则通过Leader进行日志复制
-        if (request.getPrevLogIndex() < log.last().getLogIndex() || request.getPrevLogTerm() < log.last().getTerm()) {
-            return AppendEntriesResp.builder().term(consensus.getCurrentTerm()).success(false).build();
-        }
-        
+
+        // 解决日志冲突，以Leader为准
         LogEntry entry = log.read(request.getPrevLogIndex());
         if (entry == null || entry.getTerm() != request.getPrevLogTerm()) {
+            log.truncate(request.getPrevLogIndex());
             return AppendEntriesResp.builder().term(consensus.getCurrentTerm()).success(false).build();
+        }
+
+        for (LogEntry e : request.getEntries()) {
+            log.write(e);
+        }
+
+        if (request.getLeaderCommit() > consensus.getCommitIndex()) {
+            for (long logIndex = consensus.getCommitIndex() + 1; logIndex <= request.getLeaderCommit(); logIndex++) {
+                stateMachine.apply(log.read(logIndex));
+            }
         }
 
         return AppendEntriesResp.builder().term(consensus.getCurrentTerm()).success(true).build();
@@ -68,8 +78,31 @@ public class RaftSceneImpl implements RaftScene {
     @Api(name = "heartbeat")
     @Override
     public AppendEntriesResp heartbeat(AppendEntriesReq request) {
-        // FIXME
-        return null;
+        Consensus consensus = StandardNode.getInstance().getConsensus();
+        Log log = StandardNode.getInstance().getLog();
+        StateMachine stateMachine = StandardNode.getInstance().getStateMachine();
+
+        // 如果心跳中Leader的任期比当前节点小，则通知Leader退位为Follower
+        if (request.getTerm() < consensus.getCurrentTerm()) {
+            return AppendEntriesResp.builder().term(consensus.getCurrentTerm()).success(false).build();
+        }
+
+        // 解决日志冲突，以Leader为准
+        LogEntry entry = log.read(request.getPrevLogIndex());
+        if (entry == null || entry.getTerm() != request.getPrevLogTerm()) {
+            log.truncate(request.getPrevLogIndex());
+            return AppendEntriesResp.builder().term(consensus.getCurrentTerm()).success(false).build();
+        }
+
+        if (request.getLeaderCommit() > consensus.getCommitIndex()) {
+            for (long logIndex = consensus.getCommitIndex() + 1; logIndex <= request.getLeaderCommit(); logIndex++) {
+                stateMachine.apply(log.read(logIndex));
+            }
+        }
+
+        StandardNode.getInstance().conversionTo(NodeState.FOLLOWER);
+
+        return AppendEntriesResp.builder().term(consensus.getCurrentTerm()).success(true).build();
     }
 
 }
