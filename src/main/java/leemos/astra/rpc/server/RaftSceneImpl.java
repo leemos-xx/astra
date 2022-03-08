@@ -68,7 +68,9 @@ public class RaftSceneImpl implements RaftScene {
 
         if (request.getLeaderCommit() > consensus.getCommitIndex()) {
             for (long logIndex = consensus.getCommitIndex() + 1; logIndex <= request.getLeaderCommit(); logIndex++) {
+                consensus.setCommitIndex(logIndex);
                 stateMachine.apply(log.read(logIndex));
+                consensus.setLastApplied(logIndex);
             }
         }
 
@@ -96,7 +98,9 @@ public class RaftSceneImpl implements RaftScene {
 
         if (request.getLeaderCommit() > consensus.getCommitIndex()) {
             for (long logIndex = consensus.getCommitIndex() + 1; logIndex <= request.getLeaderCommit(); logIndex++) {
+                consensus.setCommitIndex(logIndex);
                 stateMachine.apply(log.read(logIndex));
+                consensus.setLastApplied(logIndex);
             }
         }
 

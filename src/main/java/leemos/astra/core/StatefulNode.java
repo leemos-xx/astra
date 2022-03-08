@@ -110,7 +110,7 @@ public abstract class StatefulNode implements Node {
 
             // 投票给自己，并争取其它节点的投票
             consensus.voteFor(getId());
-            
+
             int votes = 1;
             for (Client client : getClients()) {
                 RequestVoteReq request = RequestVoteReq.builder().term(consensus.getCurrentTerm()).candidateId(getId())
@@ -166,21 +166,29 @@ public abstract class StatefulNode implements Node {
                 return;
             }
 
-            for (int i = 0; i < getClients().length; i++) {
-                AppendEntriesReq request = AppendEntriesReq.builder().term(consensus.getCurrentTerm()).leaderId(getId())
-                        .prevLogIndex(log.last().getLogIndex()).prevLogTerm(log.last().getTerm())
-                        .entries(new LogEntry[0]).leaderCommit(consensus.getCommitIndex()).build();
-                AppendEntriesResp response = getClients()[i].heartbeat(request);
+            outter: for (int i = 0; i < getClients().length; i++) {
 
-                if (response.getTerm() > consensus.getCurrentTerm()) {
-                    conversionTo(NodeState.FOLLOWER);
-                    break;
-                }
+                long logIndex = log.last().getLogIndex();
+                while (true) {
+                    LogEntry entry = log.read(logIndex);
 
-                if (response.isSuccess()) {
-                    consensus.updateCommit(i, consensus.getCommitIndex());
-                } else {
-                    // FIXME log replication
+                    AppendEntriesReq request = AppendEntriesReq.builder().term(consensus.getCurrentTerm())
+                            .leaderId(getId()).prevLogIndex(entry.getLogIndex()).prevLogTerm(entry.getTerm())
+                            .entries(new LogEntry[0]).leaderCommit(consensus.getCommitIndex()).build();
+                    AppendEntriesResp response = getClients()[i].heartbeat(request);
+
+                    if (response.getTerm() > consensus.getCurrentTerm()) {
+                        conversionTo(NodeState.FOLLOWER);
+                        break outter;
+                    }
+
+                    if (response.isSuccess()) {
+                        consensus.updateCommit(i, consensus.getCommitIndex());
+                        break;
+                    } else {
+                        logIndex--;
+                        consensus.updateMatch(i, logIndex);
+                    }
                 }
             }
         }

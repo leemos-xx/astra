@@ -41,11 +41,27 @@ public class Consensus {
         return this.voteFor == null;
     }
 
+    public void setCommitIndex(long commitIndex) {
+        this.commitIndex = commitIndex;
+    }
+
     public long getCommitIndex() {
         return commitIndex;
     }
 
+    public void setLastApplied(long lastApplied) {
+        this.lastApplied = lastApplied;
+    }
+
+    public long getLastApplied() {
+        return lastApplied;
+    }
+
     public void updateCommit(int idx, long commit) {
         this.nextIndex[idx] = commit;
+    }
+
+    public void updateMatch(int idx, long match) {
+        this.matchIndex[idx] = match;
     }
 }
