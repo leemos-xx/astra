@@ -1,4 +1,4 @@
-package leemos.astra.node;
+package leemos.astra.core;
 
 /**
  * 枚举Node可能存在的状态

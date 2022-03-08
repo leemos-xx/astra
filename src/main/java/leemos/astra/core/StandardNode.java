@@ -1,4 +1,4 @@
-package leemos.astra.node;
+package leemos.astra.core;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

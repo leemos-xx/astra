@@ -1,6 +1,6 @@
 package leemos.astra;
 
-import leemos.astra.node.NodeState;
+import leemos.astra.core.NodeState;
 
 /**
  * Node 代表集群中的任意一个节点，该接口中声明了这些节点的通用行为

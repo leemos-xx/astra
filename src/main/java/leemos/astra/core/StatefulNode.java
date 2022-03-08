@@ -1,4 +1,4 @@
-package leemos.astra.node;
+package leemos.astra.core;
 
 import java.util.Timer;
 import java.util.TimerTask;

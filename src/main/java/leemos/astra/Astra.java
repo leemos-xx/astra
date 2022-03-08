@@ -1,6 +1,6 @@
 package leemos.astra;
 
-import leemos.astra.node.StandardNode;
+import leemos.astra.core.StandardNode;
 
 /**
  * Astra 入口程序
