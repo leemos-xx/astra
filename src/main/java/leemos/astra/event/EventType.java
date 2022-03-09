@@ -1,5 +1,5 @@
 package leemos.astra.event;
 
 public enum EventType {
-    HEARTBEAT
+    INIT, HEARTBEAT;
 }

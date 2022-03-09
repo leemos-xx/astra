@@ -3,6 +3,9 @@ package leemos.astra;
 import leemos.astra.core.StandardNode;
 import org.apache.commons.cli.*;
 
+import java.net.Inet4Address;
+import java.net.UnknownHostException;
+
 /**
  * Astra 入口程序
  *
@@ -12,23 +15,29 @@ import org.apache.commons.cli.*;
  */
 public class Astra {
 
-    private static Options options = new Options();
+    private final static Options options = new Options();
     private static CommandLine commandLine;
     private Node node;
 
-    public static void main(String[] args) throws LifecycleException, ParseException {
+    public static void main(String[] args) throws LifecycleException, ParseException, UnknownHostException {
         CommandLineParser commandLineParser = new DefaultParser();
         options.addOption(Option.builder("p").required().longOpt("peers").type(String[].class).build());
-        options.addOption(Option.builder("e").longOpt("election").type(int.class).build());
-        options.addOption(Option.builder("h").longOpt("heartbeat").type(int.class).build());
 
         commandLine = commandLineParser.parse(options, args);
 
         new Astra().start();
     }
 
-    public void start() throws LifecycleException {
-        node = StandardNode.getInstance();
+    public void start() throws LifecycleException, UnknownHostException {
+        NodeConfig config = NodeConfig.builder()
+                // FIXME host address
+                .id(Inet4Address.getLocalHost().getHostAddress())
+                .peers(commandLine.getOptionValues("p"))
+                .electionTimeout(60000)
+                .heartbeatTimeout(10000)
+                .build();
+
+        node = new StandardNode(config);
         node.start();
     }
 

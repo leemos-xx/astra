@@ -47,10 +47,4 @@ public interface Node extends Lifecycle {
      * @return
      */
     StateMachine getStateMachine();
-
-    /**
-     * 切换节点状态
-     * @param newState
-     */
-    void conversionTo(NodeState newState);
 }

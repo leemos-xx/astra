@@ -5,15 +5,13 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import leemos.astra.*;
+import leemos.astra.event.Event;
+import leemos.astra.event.EventBus;
+import leemos.astra.event.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import leemos.astra.Client;
-import leemos.astra.Consensus;
-import leemos.astra.Log;
-import leemos.astra.LogEntry;
-import leemos.astra.Node;
-import leemos.astra.StateMachine;
 import leemos.astra.rpc.AppendEntriesReq;
 import leemos.astra.rpc.AppendEntriesResp;
 import leemos.astra.rpc.RequestVoteReq;
@@ -30,6 +28,7 @@ public abstract class StatefulNode implements Node {
 
     protected static final Logger logger = LoggerFactory.getLogger(Node.class);
 
+    protected NodeConfig config;
     private volatile NodeState state;
     private Timer electionTimer = new Timer();
     private Timer heartbeatTimer = new Timer();
@@ -38,10 +37,30 @@ public abstract class StatefulNode implements Node {
     private Log log;
     private StateMachine stateMachine;
 
+    public StatefulNode(NodeConfig config) {
+        this.config = config;
+        this.consensus = new Consensus(config.getPeers().length);
+        this.log = new StandardLog();
+        this.stateMachine = new StandardStateMachine();
+
+        EventBus.getInstance().addListener(new EventListener() {
+            @Override
+            public void fireEvent(Event event) {
+                switch (event.getType()) {
+                    case INIT:
+                    case HEARTBEAT:
+                        conversionTo(NodeState.FOLLOWER);
+                        break;
+                }
+            }
+        });
+    }
+
     private Lock lock = new ReentrantLock();
 
-    public void setConsensus(Consensus consensus) {
-        this.consensus = consensus;
+    @Override
+    public NodeConfig getConfig() {
+        return config;
     }
 
     @Override
@@ -49,17 +68,9 @@ public abstract class StatefulNode implements Node {
         return consensus;
     }
 
-    public void setLog(Log log) {
-        this.log = log;
-    }
-
     @Override
     public Log getLog() {
         return log;
-    }
-
-    public void setStateMachine(StateMachine stateMachine) {
-        this.stateMachine = stateMachine;
     }
 
     @Override
@@ -67,8 +78,7 @@ public abstract class StatefulNode implements Node {
         return stateMachine;
     }
 
-    @Override
-    public void conversionTo(NodeState newState) {
+    private void conversionTo(NodeState newState) {
         if (this.state == newState) {
             return;
         }

@@ -3,6 +3,9 @@ package leemos.astra.core;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import leemos.astra.event.Event;
+import leemos.astra.event.EventBus;
+import leemos.astra.event.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,44 +28,18 @@ import leemos.astra.rpc.server.StandardServer;
 public class StandardNode extends StatefulNode {
 
     private static final Logger logger = LoggerFactory.getLogger(StandardNode.class);
-    private static volatile StandardNode singleton;
 
-    public static StandardNode getInstance() {
-        if (singleton == null) {
-            synchronized (StandardNode.class) {
-                if (singleton == null) {
-                    NodeConfig config = NodeConfig.builder()
-                            .peers(new String[] { "localhost:10882", "localhost:10881" })
-                            .electionTimeout(60000)
-                            .heartbeatTimeout(10000)
-                            .build();
-                    singleton = new StandardNode(config);
-                    singleton.setConsensus(new Consensus(config.getPeers().length));
-                    singleton.setLog(new StandardLog());
-                    singleton.setStateMachine(new StandardStateMachine());
-                }
-            }
-        }
-        return singleton;
-    }
-    
-    private NodeConfig config;
     private Server server;
     private Client[] clients;
     private ExecutorService executor;
 
-    private StandardNode(NodeConfig config) {
-        this.config = config;
+    public StandardNode(NodeConfig config) {
+        super(config);
     }
 
     @Override
     public String getId() {
         return config.getId();
-    }
-
-    @Override
-    public NodeConfig getConfig() {
-        return config;
     }
 
     @Override
@@ -90,7 +67,7 @@ public class StandardNode extends StatefulNode {
         }
 
         // 转换为Follower
-        conversionTo(NodeState.FOLLOWER);
+        EventBus.getInstance().fire(new Event(EventType.INIT));
     }
 
     @Override
