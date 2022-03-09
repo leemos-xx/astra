@@ -13,13 +13,13 @@ import leemos.orion.client.proxy.JdkProxy;
 import leemos.orion.client.proxy.JdkProxyInvoker;
 import leemos.orion.client.rpc.OrionClient;
 
-public class StandardClient implements Client {
+public class DefaultClient implements Client {
 
     private String peer;
     private OrionClient client;
     private RaftScene scene;
 
-    public StandardClient(String peer) {
+    public DefaultClient(String peer) {
         this.peer = peer;
     }
 

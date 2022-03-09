@@ -1,5 +1,7 @@
 package leemos.astra.event;
 
 public enum EventType {
-    INIT, HEARTBEAT;
+    CONVERSION_TO_FOLLOWER,
+    CONVERSION_TO_CANDIDATE,
+    CONVERSION_TO_LEADER;
 }

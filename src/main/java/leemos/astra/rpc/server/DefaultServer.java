@@ -4,6 +4,7 @@ import java.util.concurrent.CountDownLatch;
 
 import leemos.astra.LifecycleException;
 import leemos.astra.Server;
+import leemos.orion.core.StandardServer;
 
 /**
  * RpcServer 
@@ -12,8 +13,8 @@ import leemos.astra.Server;
  * @date 2022-03-05
  * @version 1.0
  */
-public class StandardServer implements Server {
-    private leemos.orion.core.StandardServer server = new leemos.orion.core.StandardServer();
+public class DefaultServer implements Server {
+    private StandardServer server = new StandardServer();
     private CountDownLatch latch = new CountDownLatch(1);
 
     @Override

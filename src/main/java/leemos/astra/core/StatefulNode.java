@@ -1,7 +1,6 @@
 package leemos.astra.core;
 
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -12,8 +11,6 @@ import leemos.astra.event.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import leemos.astra.rpc.AppendEntriesReq;
-import leemos.astra.rpc.AppendEntriesResp;
 import leemos.astra.rpc.RequestVoteReq;
 import leemos.astra.rpc.RequestVoteResp;
 
@@ -30,52 +27,39 @@ public abstract class StatefulNode implements Node {
 
     protected NodeConfig config;
     private volatile NodeState state;
-    private Timer electionTimer = new Timer();
-    private Timer heartbeatTimer = new Timer();
 
-    private Consensus consensus;
-    private Log log;
-    private StateMachine stateMachine;
+    private final Timer electionTimer = new Timer();
+    private final Timer heartbeatTimer = new Timer();
+
+    private final Lock lock = new ReentrantLock();
 
     public StatefulNode(NodeConfig config) {
         this.config = config;
-        this.consensus = new Consensus(config.getPeers().length);
-        this.log = new StandardLog();
-        this.stateMachine = new StandardStateMachine();
+        Consensus.init(config.getPeers().length);
 
-        EventBus.getInstance().addListener(new EventListener() {
+        // 通过内部事件总线来解耦Node的状态变化
+        EventBus.get().addListener(new EventListener() {
+
             @Override
             public void fireEvent(Event event) {
                 switch (event.getType()) {
-                    case INIT:
-                    case HEARTBEAT:
+                    case CONVERSION_TO_FOLLOWER:
                         conversionTo(NodeState.FOLLOWER);
+                        break;
+                    case CONVERSION_TO_CANDIDATE:
+                        conversionTo(NodeState.CANDIDATE);
+                        break;
+                    case CONVERSION_TO_LEADER:
+                        conversionTo(NodeState.LEADER);
                         break;
                 }
             }
         });
     }
 
-    private Lock lock = new ReentrantLock();
-
     @Override
     public NodeConfig getConfig() {
         return config;
-    }
-
-    @Override
-    public Consensus getConsensus() {
-        return consensus;
-    }
-
-    @Override
-    public Log getLog() {
-        return log;
-    }
-
-    @Override
-    public StateMachine getStateMachine() {
-        return stateMachine;
     }
 
     private void conversionTo(NodeState newState) {
@@ -107,37 +91,38 @@ public abstract class StatefulNode implements Node {
             break;
         }
 
-        consensus.voteFor(null);
         this.state = newState;
     }
 
     private void conversionToLeader() {
-        logger.info("Node :-> Leader");
-        int heartbeatTimeout = getConfig().getHeartbeatTimeout();
-        heartbeatTimer.scheduleAtFixedRate(new Heartbeat(), 0, heartbeatTimeout);
-    }
+        logger.info("Node conversion to leader...");
 
-    private void resignFromLeader() {
-        heartbeatTimer.cancel();
+        int heartbeatTimeout = getConfig().getHeartbeatTimeout();
+        heartbeatTimer.scheduleAtFixedRate(new HeartbeatTask(this), 0, heartbeatTimeout);
     }
 
     private void conversionToCandidate() {
-        logger.info("Node :-> Candidate");
+        logger.info("Node conversion to candidate...");
         try {
             lock.lock();
             // 切换为候选人身份后，将term自增1，并发起新一轮选举
-            consensus.increaseTeam();
+            Consensus.get().increaseTeam();
 
             // 投票给自己，并争取其它节点的投票
-            consensus.voteFor(getId());
-
             int votes = 1;
+            Consensus.get().voteFor(getId());
+
             for (Client client : getClients()) {
-                RequestVoteReq request = RequestVoteReq.builder().term(consensus.getCurrentTerm()).candidateId(getId())
-                        .lastLogIndex(log.last().getLogIndex()).lastLogTerm(log.last().getTerm()).build();
+                RequestVoteReq request = RequestVoteReq.builder()
+                        .term(Consensus.get().getCurrentTerm())
+                        .candidateId(getId())
+                        .lastLogIndex(StandardLog.get().last().getLogIndex())
+                        .lastLogTerm(StandardLog.get().last().getTerm())
+                        .build();
                 RequestVoteResp response = client.requestVote(request);
 
-                if (response.getTerm() > consensus.getCurrentTerm()) {
+                // 如果某个节点的任期比自己大，则结束选举
+                if (response.getTerm() > Consensus.get().getCurrentTerm()) {
                     conversionTo(NodeState.FOLLOWER);
                     break;
                 }
@@ -158,71 +143,37 @@ public abstract class StatefulNode implements Node {
         }
     }
 
+    private void conversionToFollower() {
+        logger.info("Node conversion to follower...");
+        
+        int electionTimeout = getConfig().getElectionTimeout();
+        electionTimer.scheduleAtFixedRate(new ElectionTask(), electionTimeout, electionTimeout);
+    }
+
+    private void resignFromLeader() {
+        // 不再继续向其它节点发送心跳
+        heartbeatTimer.cancel();
+
+        Consensus.get().voteFor(null);
+    }
+
     private void resignFromCandidate() {
         try {
             lock.lock();
 
-            consensus.decreaseTerm();
-            consensus.voteFor(null);
+            Consensus.get().decreaseTerm();
         } finally {
             lock.unlock();
         }
-    }
 
-    private void conversionToFollower() {
-        logger.info("Node :-> Follower");
-        
-        int electionTimeout = getConfig().getElectionTimeout();
-        electionTimer.scheduleAtFixedRate(new Election(), electionTimeout, electionTimeout);
+        Consensus.get().voteFor(null);
     }
 
     private void resignFromFollower() {
+        // 不再随机时间进行发起选举
         electionTimer.cancel();
+
+        Consensus.get().voteFor(null);
     }
 
-    private class Heartbeat extends TimerTask {
-
-        @Override
-        public void run() {
-            if (state != NodeState.LEADER) {
-                return;
-            }
-
-            outter: for (int i = 0; i < getClients().length; i++) {
-
-                long logIndex = log.last().getLogIndex();
-                while (true) {
-                    LogEntry entry = log.read(logIndex);
-
-                    AppendEntriesReq request = AppendEntriesReq.builder().term(consensus.getCurrentTerm())
-                            .leaderId(getId()).prevLogIndex(entry.getLogIndex()).prevLogTerm(entry.getTerm())
-                            .entries(new LogEntry[0]).leaderCommit(consensus.getCommitIndex()).build();
-                    AppendEntriesResp response = getClients()[i].heartbeat(request);
-
-                    if (response.getTerm() > consensus.getCurrentTerm()) {
-                        conversionTo(NodeState.FOLLOWER);
-                        break outter;
-                    }
-
-                    if (response.isSuccess()) {
-                        consensus.updateCommit(i, consensus.getCommitIndex());
-                        break;
-                    } else {
-                        logIndex--;
-                        consensus.updateMatch(i, logIndex);
-                    }
-                }
-            }
-        }
-
-    }
-
-    private class Election extends TimerTask {
-
-        @Override
-        public void run() {
-            conversionTo(NodeState.CANDIDATE);
-        }
-
-    }
 }

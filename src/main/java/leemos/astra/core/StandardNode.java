@@ -10,16 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import leemos.astra.Client;
-import leemos.astra.Consensus;
 import leemos.astra.LifecycleException;
 import leemos.astra.Node;
 import leemos.astra.NodeConfig;
 import leemos.astra.Server;
-import leemos.astra.rpc.clients.StandardClient;
-import leemos.astra.rpc.server.StandardServer;
+import leemos.astra.rpc.clients.DefaultClient;
+import leemos.astra.rpc.server.DefaultServer;
 
 /**
- * StandardNode {@link Node}的标准实现
+ * StandardNode {@link Node}的标准实现，仅负责通讯相关实现
  *
  * @author lihao
  * @date 2022年2月23日
@@ -45,29 +44,37 @@ public class StandardNode extends StatefulNode {
     @Override
     public void start() throws LifecycleException {
         // 启动server
+        startServer();
+
+        // 建立与其他节点的连接
+        startClients();
+
+        // 初始化为Follower
+        EventBus.get().fireEvent(new Event(EventType.CONVERSION_TO_FOLLOWER));
+    }
+
+    private void startServer() {
         executor = Executors.newFixedThreadPool(1);
         executor.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    server = new StandardServer();
+                    server = new DefaultServer();
                     server.start();
                 } catch (LifecycleException e) {
                     logger.error(e.getMessage(), e);
                 }
             }
         });
+    }
 
-        // 建立与其他节点的连接
+    private void startClients() throws LifecycleException {
         clients = new Client[config.getPeers().length];
         for (int i = 0; i < clients.length; i++) {
-            clients[i] = new StandardClient(config.getPeers()[i]);
+            clients[i] = new DefaultClient(config.getPeers()[i]);
             clients[i].start();
         }
-
-        // 转换为Follower
-        EventBus.getInstance().fire(new Event(EventType.INIT));
     }
 
     @Override

@@ -2,6 +2,7 @@ package leemos.astra.core;
 
 import java.util.ArrayList;
 
+import leemos.astra.Consensus;
 import leemos.astra.Log;
 import leemos.astra.LogEntry;
 
@@ -14,7 +15,22 @@ import leemos.astra.LogEntry;
  */
 public class StandardLog implements Log {
 
+    private static volatile StandardLog singleton;
+
     private ArrayList<LogEntry> entries = new ArrayList<LogEntry>();
+
+    public static StandardLog get() {
+        if (singleton == null) {
+            synchronized (StandardLog.class) {
+                if (singleton == null) {
+                    singleton = new StandardLog();
+                }
+            }
+        }
+        return singleton;
+    }
+
+    private StandardLog() {}
 
     @Override
     public synchronized void write(LogEntry logEntry) {

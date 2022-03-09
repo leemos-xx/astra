@@ -14,7 +14,7 @@ public class EventBus {
 
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
-    public static EventBus getInstance() {
+    public static EventBus get() {
         if (singleton == null) {
             synchronized (EventBus.class) {
                 if (singleton == null) {
@@ -29,7 +29,7 @@ public class EventBus {
         listeners.add(listener);
     }
 
-    public synchronized void fire(Event event) {
+    public synchronized void fireEvent(Event event) {
         for (EventListener listener: listeners) {
             listener.fireEvent(event);
         }

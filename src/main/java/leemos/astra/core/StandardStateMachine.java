@@ -1,5 +1,6 @@
 package leemos.astra.core;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import leemos.astra.LogEntry;
@@ -14,7 +15,22 @@ import leemos.astra.StateMachine;
  */
 public class StandardStateMachine implements StateMachine {
 
+    private static volatile StandardStateMachine singleton;
+
     private ConcurrentHashMap<String, Object> sm = new ConcurrentHashMap<String, Object>();
+
+    public static StandardStateMachine get() {
+        if (singleton == null) {
+            synchronized (StandardStateMachine.class) {
+                if (singleton == null) {
+                    singleton = new StandardStateMachine();
+                }
+            }
+        }
+        return singleton;
+    }
+
+    private StandardStateMachine() {}
 
     @Override
     public void apply(LogEntry logEntry) {

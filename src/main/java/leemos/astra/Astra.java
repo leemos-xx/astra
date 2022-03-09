@@ -21,7 +21,7 @@ public class Astra {
 
     public static void main(String[] args) throws LifecycleException, ParseException, UnknownHostException {
         CommandLineParser commandLineParser = new DefaultParser();
-        options.addOption(Option.builder("p").required().longOpt("peers").type(String[].class).build());
+        options.addOption(Option.builder("p").hasArg(true).required().longOpt("peers").type(String[].class).build());
 
         commandLine = commandLineParser.parse(options, args);
 

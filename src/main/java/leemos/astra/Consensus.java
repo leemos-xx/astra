@@ -1,5 +1,10 @@
 package leemos.astra;
 
+import leemos.astra.event.EventBus;
+import leemos.astra.event.EventListener;
+
+import java.util.ArrayList;
+
 /**
  * Consensus 用于实现分布式共识
  * 
@@ -9,6 +14,8 @@ package leemos.astra;
  */
 public class Consensus {
 
+    private static volatile Consensus singleton;
+
     private int currentTerm;
     private String voteFor;
     private long commitIndex;
@@ -16,7 +23,21 @@ public class Consensus {
     private long[] nextIndex;
     private long[] matchIndex;
 
-    public Consensus(int peers) {
+    public static void init(int peers) {
+        if (singleton == null) {
+            synchronized (Consensus.class) {
+                if (singleton == null) {
+                    singleton = new Consensus(peers);
+                }
+            }
+        }
+    }
+
+    public static Consensus get() {
+        return singleton;
+    }
+
+    private Consensus(int peers) {
         this.nextIndex = new long[peers];
         this.matchIndex = new long[peers];
     }
