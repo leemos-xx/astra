@@ -1,2 +1,5 @@
-package leemos.astra.event;public class EventType {
+package leemos.astra.event;
+
+public enum EventType {
+    HEARTBEAT
 }
