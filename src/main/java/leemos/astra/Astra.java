@@ -33,7 +33,7 @@ public class Astra {
                 // FIXME host address
                 .id(Inet4Address.getLocalHost().getHostAddress())
                 .peers(commandLine.getOptionValues("p"))
-                .electionTimeout(30000)
+                .electionTimeout(10000)
                 .heartbeatTimeout(3000)
                 .build();
 

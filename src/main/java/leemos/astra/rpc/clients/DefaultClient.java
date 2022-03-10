@@ -7,10 +7,7 @@ import leemos.astra.rpc.AppendEntriesResp;
 import leemos.astra.rpc.RaftScene;
 import leemos.astra.rpc.RequestVoteReq;
 import leemos.astra.rpc.RequestVoteResp;
-import leemos.orion.client.Proxy;
-import leemos.orion.client.ProxyInvoker;
-import leemos.orion.client.proxy.JdkProxy;
-import leemos.orion.client.proxy.JdkProxyInvoker;
+import leemos.orion.client.proxy.ClientProxy;
 import leemos.orion.client.rpc.OrionClient;
 
 public class DefaultClient implements Client {
@@ -44,9 +41,7 @@ public class DefaultClient implements Client {
         try {
             client.start();
 
-            Proxy proxy = new JdkProxy();
-            ProxyInvoker invoker = new JdkProxyInvoker(peer, client);
-            RaftScene scene = proxy.getProxy(RaftScene.class, invoker);
+            RaftScene scene = ClientProxy.getProxy(peer, RaftScene.class, client);
 
             this.scene = scene;
             this.client = client;

@@ -8,6 +8,7 @@ import leemos.astra.*;
 import leemos.astra.event.Event;
 import leemos.astra.event.EventBus;
 import leemos.astra.event.EventListener;
+import leemos.orion.core.ServerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,17 +43,24 @@ public abstract class StatefulNode implements Node {
 
             @Override
             public void fireEvent(Event event) {
-                switch (event.getType()) {
-                    case CONVERSION_TO_FOLLOWER:
-                        conversionTo(NodeState.FOLLOWER);
-                        break;
-                    case CONVERSION_TO_CANDIDATE:
-                        conversionTo(NodeState.CANDIDATE);
-                        break;
-                    case CONVERSION_TO_LEADER:
-                        conversionTo(NodeState.LEADER);
-                        break;
+                try {
+                    lock.lock();
+
+                    switch (event.getType()) {
+                        case CONVERSION_TO_FOLLOWER:
+                            conversionTo(NodeState.FOLLOWER);
+                            break;
+                        case CONVERSION_TO_CANDIDATE:
+                            conversionTo(NodeState.CANDIDATE);
+                            break;
+                        case CONVERSION_TO_LEADER:
+                            conversionTo(NodeState.LEADER);
+                            break;
+                    }
+                } finally {
+                    lock.unlock();
                 }
+
             }
         });
     }
@@ -91,7 +99,7 @@ public abstract class StatefulNode implements Node {
     }
 
     private void conversionToLeader() {
-        logger.info("Node conversion to leader...");
+        logger.info("node conversion to leader...");
 
         int heartbeatTimeout = getConfig().getHeartbeatTimeout();
         heartbeatTimer = new Timer();
@@ -99,9 +107,12 @@ public abstract class StatefulNode implements Node {
     }
 
     private void conversionToCandidate() {
-        logger.info("Node conversion to candidate...");
+        logger.info("node conversion to candidate...");
         try {
             lock.lock();
+            // 停止选举
+            electionTimer.cancel();
+
             // 切换为候选人身份后，将term自增1，并发起新一轮选举
             Consensus.get().increaseTeam();
 
@@ -116,17 +127,22 @@ public abstract class StatefulNode implements Node {
                         .lastLogIndex(StandardLog.get().last().getLogIndex())
                         .lastLogTerm(StandardLog.get().last().getTerm())
                         .build();
-                RequestVoteResp response = client.requestVote(request);
+                try {
+                    RequestVoteResp response = client.requestVote(request);
 
-                // 如果某个节点的任期比自己大，则结束选举
-                if (response.getTerm() > Consensus.get().getCurrentTerm()) {
-                    conversionTo(NodeState.FOLLOWER);
-                    break;
+                    // 如果某个节点的任期比自己大，则结束选举
+                    if (response.getTerm() > Consensus.get().getCurrentTerm()) {
+                        conversionTo(NodeState.FOLLOWER);
+                        break;
+                    }
+
+                    if (response.isVoteGranted()) {
+                        votes++;
+                    }
+                } catch (Exception e) {
+                    logger.error("rpc error: " + e.getMessage());
                 }
 
-                if (response.isVoteGranted()) {
-                    votes++;
-                }
             }
 
             // 是否获得超过半数的投票
@@ -141,7 +157,7 @@ public abstract class StatefulNode implements Node {
     }
 
     private void conversionToFollower() {
-        logger.info("Node conversion to follower...");
+        logger.info("node conversion to follower...");
         
         int electionTimeout = getConfig().getElectionTimeout();
         electionTimer = new Timer();
@@ -149,21 +165,19 @@ public abstract class StatefulNode implements Node {
     }
 
     private void resignFromLeader() {
+        logger.info("Node resign from leader...");
+
         // 不再继续向其它节点发送心跳
         heartbeatTimer.cancel();
     }
 
     private void resignFromCandidate() {
-        try {
-            lock.lock();
-
-            Consensus.get().decreaseTerm();
-        } finally {
-            lock.unlock();
-        }
+        logger.info("Node resign from candidate...");
+        Consensus.get().decreaseTerm();
     }
 
     private void resignFromFollower() {
+        logger.info("Node resign from candidate...");
         // 不再随机时间发起选举
         electionTimer.cancel();
     }
