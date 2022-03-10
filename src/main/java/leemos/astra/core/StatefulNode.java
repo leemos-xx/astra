@@ -164,7 +164,7 @@ public abstract class StatefulNode implements Node {
     }
 
     private void resignFromFollower() {
-        // 不再随机时间进行发起选举
+        // 不再随机时间发起选举
         electionTimer.cancel();
     }
 

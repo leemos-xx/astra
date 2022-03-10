@@ -10,6 +10,14 @@ package leemos.astra;
 public interface Log {
 
     /**
+     * 是否包含该索引位的日志
+     *
+     * @param logIndex
+     * @return
+     */
+    public boolean contains(long logIndex);
+
+    /**
      * 写日志，追加到最末
      * 
      * @param logEntry

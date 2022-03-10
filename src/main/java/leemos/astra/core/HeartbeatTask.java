@@ -20,32 +20,26 @@ public class HeartbeatTask extends TimerTask {
 
     @Override
     public void run() {
-        outter: for (int i = 0; i < node.getClients().length; i++) {
-            LogEntry lastLog = StandardLog.get().last();
+        LogEntry lastLog = StandardLog.get().last();
 
-            while (true) {
-                AppendEntriesReq request = AppendEntriesReq.builder()
-                        .term(Consensus.get().getCurrentTerm())
-                        .leaderId(node.getId())
-                        .prevLogIndex(lastLog.getLogIndex())
-                        .prevLogTerm(lastLog.getTerm())
-                        .entries(new LogEntry[0])
-                        .leaderCommit(Consensus.get().getCommitIndex())
-                        .build();
-                AppendEntriesResp response = node.getClients()[i].heartbeat(request);
+        for (int i = 0; i < node.getClients().length; i++) {
+            AppendEntriesReq request = AppendEntriesReq.builder()
+                    .term(Consensus.get().getCurrentTerm())
+                    .leaderId(node.getId())
+                    .prevLogIndex(lastLog.getLogIndex())
+                    .prevLogTerm(lastLog.getTerm())
+                    .entries(new LogEntry[0])
+                    .leaderCommit(Consensus.get().getCommitIndex())
+                    .build();
+            AppendEntriesResp response = node.getClients()[i].heartbeat(request);
 
-                if (response.getTerm() > Consensus.get().getCurrentTerm()) {
-                    EventBus.get().fireEvent(new Event(EventType.CONVERSION_TO_FOLLOWER));
-                    break outter;
-                }
+            if (response.getTerm() > Consensus.get().getCurrentTerm()) {
+                EventBus.get().fireEvent(new Event(EventType.CONVERSION_TO_FOLLOWER));
+                break;
+            }
 
-                if (response.isSuccess()) {
-                    Consensus.get().updateCommit(i, Consensus.get().getCommitIndex());
-                    break;
-                } else {
-                    int logIndex = (int) lastLog.getLogIndex();
-                    Consensus.get().updateMatch(i, --logIndex);
-                }
+            if (response.isSuccess()) {
+                Consensus.get().updateCommit(i, Consensus.get().getCommitIndex());
             }
         }
     }

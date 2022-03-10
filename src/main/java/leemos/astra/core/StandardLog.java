@@ -2,7 +2,6 @@ package leemos.astra.core;
 
 import java.util.ArrayList;
 
-import leemos.astra.Consensus;
 import leemos.astra.Log;
 import leemos.astra.LogEntry;
 
@@ -15,6 +14,7 @@ import leemos.astra.LogEntry;
  */
 public class StandardLog implements Log {
 
+    private static final LogEntry EMPTY = LogEntry.builder().logIndex(-1).term(0).build();
     private static volatile StandardLog singleton;
 
     private ArrayList<LogEntry> entries = new ArrayList<LogEntry>();
@@ -33,6 +33,11 @@ public class StandardLog implements Log {
     private StandardLog() {}
 
     @Override
+    public boolean contains(long logIndex) {
+        return logIndex >= 0 && logIndex <= entries.size();
+    }
+
+    @Override
     public synchronized void write(LogEntry logEntry) {
         entries.add(logEntry);
     }
@@ -45,7 +50,7 @@ public class StandardLog implements Log {
     @Override
     public synchronized LogEntry last() {
         if (entries.size() == 0) {
-            return LogEntry.builder().term(0).logIndex(0).build();
+            return EMPTY;
         }
         return entries.get(entries.size() - 1);
     }

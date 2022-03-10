@@ -26,39 +26,42 @@ public class RaftSceneImpl implements RaftScene {
 
         // 如果已经为其他人投过票，则不再投票
         if (!Consensus.get().voting()) {
-            return RequestVoteResp.builder().term(Consensus.get().getCurrentTerm()).voteGranted(false).build();
+            return generateRequestVoteResp(false);
         }
 
         // 如果请求中的任期比当前节点任期小，则投反对票
         if (request.getTerm() < Consensus.get().getCurrentTerm()) {
-            return RequestVoteResp.builder().term(Consensus.get().getCurrentTerm()).voteGranted(false).build();
+            return generateRequestVoteResp(false);
         }
 
         // 如果Candidate的日志比当前节点旧，则投反对票
         if (request.getLastLogTerm() < StandardLog.get().last().getTerm() || (request.getLastLogTerm() == StandardLog.get().last().getTerm()
                 && request.getLastLogIndex() < StandardLog.get().last().getLogIndex())) {
-            return RequestVoteResp.builder().term(Consensus.get().getCurrentTerm()).voteGranted(false).build();
+            return generateRequestVoteResp(false);
         }
 
         Consensus.get().voteFor(request.getCandidateId());
 
-        return RequestVoteResp.builder().term(Consensus.get().getCurrentTerm()).voteGranted(true).build();
+        return generateRequestVoteResp(true);
+    }
+
+    private RequestVoteResp generateRequestVoteResp(boolean voteGranted) {
+        return RequestVoteResp.builder().term(Consensus.get().getCurrentTerm()).voteGranted(voteGranted).build();
     }
 
     @Api(name = "appendEntries")
     @Override
     public AppendEntriesResp appendEntries(AppendEntriesReq request) {
-
         // 如果心跳中Leader的任期比当前节点小，则通知Leader退位为Follower
         if (request.getTerm() < Consensus.get().getCurrentTerm()) {
-            return AppendEntriesResp.builder().term(Consensus.get().getCurrentTerm()).success(false).build();
+            return generateAppendEntriesResp(false);
         }
 
         // 解决日志冲突，以Leader为准
         LogEntry entry = StandardLog.get().read(request.getPrevLogIndex());
         if (entry == null || entry.getTerm() != request.getPrevLogTerm()) {
             StandardLog.get().truncate(request.getPrevLogIndex());
-            return AppendEntriesResp.builder().term(Consensus.get().getCurrentTerm()).success(false).build();
+            return generateAppendEntriesResp(false);
         }
 
         for (LogEntry e : request.getEntries()) {
@@ -73,7 +76,7 @@ public class RaftSceneImpl implements RaftScene {
             }
         }
 
-        return AppendEntriesResp.builder().term(Consensus.get().getCurrentTerm()).success(true).build();
+        return generateAppendEntriesResp(true);
     }
 
     @Api(name = "heartbeat")
@@ -81,18 +84,12 @@ public class RaftSceneImpl implements RaftScene {
     public AppendEntriesResp heartbeat(AppendEntriesReq request) {
         // 如果心跳中Leader的任期比当前节点小，则通知Leader退位为Follower
         if (request.getTerm() < Consensus.get().getCurrentTerm()) {
-            return AppendEntriesResp.builder().term(Consensus.get().getCurrentTerm()).success(false).build();
-        }
-
-        // 解决日志冲突，以Leader为准
-        LogEntry entry = StandardLog.get().read(request.getPrevLogIndex());
-        if (entry == null || entry.getTerm() != request.getPrevLogTerm()) {
-            StandardLog.get().truncate(request.getPrevLogIndex());
-            return AppendEntriesResp.builder().term(Consensus.get().getCurrentTerm()).success(false).build();
+            return generateAppendEntriesResp(false);
         }
 
         if (request.getLeaderCommit() > Consensus.get().getCommitIndex()) {
-            for (long logIndex = Consensus.get().getCommitIndex() + 1; logIndex <= request.getLeaderCommit(); logIndex++) {
+            for (long logIndex = Consensus.get().getCommitIndex() + 1;
+                 logIndex <= request.getLeaderCommit() && logIndex <= StandardLog.get().last().getLogIndex(); logIndex++) {
                 Consensus.get().setCommitIndex(logIndex);
                 StandardStateMachine.get().apply(StandardLog.get().read(logIndex));
                 Consensus.get().setLastApplied(logIndex);
@@ -100,8 +97,13 @@ public class RaftSceneImpl implements RaftScene {
         }
 
         EventBus.get().fireEvent(new Event(EventType.CONVERSION_TO_FOLLOWER));
+        Consensus.get().setCurrentTerm(request.getTerm());
 
-        return AppendEntriesResp.builder().term(Consensus.get().getCurrentTerm()).success(true).build();
+        return generateAppendEntriesResp(true);
+    }
+
+    private AppendEntriesResp generateAppendEntriesResp(boolean success) {
+        return AppendEntriesResp.builder().term(Consensus.get().getCurrentTerm()).success(success).build();
     }
 
 }

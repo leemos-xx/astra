@@ -16,10 +16,10 @@ public class Consensus {
 
     private static volatile Consensus singleton;
 
-    private int currentTerm;
-    private String voteFor;
-    private long commitIndex;
-    private long lastApplied;
+    private int currentTerm = 0;
+    private String voteFor = null;
+    private long commitIndex = -1;
+    private long lastApplied = -1;
     private long[] nextIndex;
     private long[] matchIndex;
 
@@ -48,6 +48,10 @@ public class Consensus {
 
     public void decreaseTerm() {
         this.currentTerm--;
+    }
+
+    public void setCurrentTerm(int currentTerm) {
+        this.currentTerm = currentTerm;
     }
 
     public int getCurrentTerm() {
