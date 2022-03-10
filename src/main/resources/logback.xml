@@ -13,6 +13,7 @@
 	</appender>
 
 	<logger name="io.netty" level="warn" />
+	<logger name="leemos.orion" level="warn" />
 
 	<root level="info">
 		<appender-ref ref="console" />
