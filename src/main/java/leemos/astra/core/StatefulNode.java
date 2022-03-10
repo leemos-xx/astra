@@ -28,8 +28,8 @@ public abstract class StatefulNode implements Node {
     protected NodeConfig config;
     private volatile NodeState state;
 
-    private final Timer electionTimer = new Timer();
-    private final Timer heartbeatTimer = new Timer();
+    private Timer electionTimer;
+    private Timer heartbeatTimer;
 
     private final Lock lock = new ReentrantLock();
 
@@ -63,10 +63,6 @@ public abstract class StatefulNode implements Node {
     }
 
     private void conversionTo(NodeState newState) {
-        if (this.state == newState) {
-            return;
-        }
-
         if (this.state == NodeState.LEADER) {
             resignFromLeader();
         }
@@ -98,6 +94,7 @@ public abstract class StatefulNode implements Node {
         logger.info("Node conversion to leader...");
 
         int heartbeatTimeout = getConfig().getHeartbeatTimeout();
+        heartbeatTimer = new Timer();
         heartbeatTimer.scheduleAtFixedRate(new HeartbeatTask(this), 0, heartbeatTimeout);
     }
 
@@ -147,14 +144,13 @@ public abstract class StatefulNode implements Node {
         logger.info("Node conversion to follower...");
         
         int electionTimeout = getConfig().getElectionTimeout();
+        electionTimer = new Timer();
         electionTimer.scheduleAtFixedRate(new ElectionTask(), electionTimeout, electionTimeout);
     }
 
     private void resignFromLeader() {
         // 不再继续向其它节点发送心跳
         heartbeatTimer.cancel();
-
-        Consensus.get().voteFor(null);
     }
 
     private void resignFromCandidate() {
@@ -165,15 +161,11 @@ public abstract class StatefulNode implements Node {
         } finally {
             lock.unlock();
         }
-
-        Consensus.get().voteFor(null);
     }
 
     private void resignFromFollower() {
         // 不再随机时间进行发起选举
         electionTimer.cancel();
-
-        Consensus.get().voteFor(null);
     }
 
 }

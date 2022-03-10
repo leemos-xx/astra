@@ -22,8 +22,10 @@ public class RaftSceneImpl implements RaftScene {
     @Override
     public synchronized RequestVoteResp requestVote(RequestVoteReq request) {
 
+        EventBus.get().fireEvent(new Event(EventType.CONVERSION_TO_FOLLOWER));
+
         // 如果已经为其他人投过票，则不再投票
-        if (Consensus.get().voting()) {
+        if (!Consensus.get().voting()) {
             return RequestVoteResp.builder().term(Consensus.get().getCurrentTerm()).voteGranted(false).build();
         }
 
@@ -39,8 +41,6 @@ public class RaftSceneImpl implements RaftScene {
         }
 
         Consensus.get().voteFor(request.getCandidateId());
-
-        EventBus.get().fireEvent(new Event(EventType.CONVERSION_TO_FOLLOWER));
 
         return RequestVoteResp.builder().term(Consensus.get().getCurrentTerm()).voteGranted(true).build();
     }

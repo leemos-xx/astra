@@ -21,16 +21,14 @@ public class HeartbeatTask extends TimerTask {
     @Override
     public void run() {
         outter: for (int i = 0; i < node.getClients().length; i++) {
-            long logIndex = StandardLog.get().last().getLogIndex();
+            LogEntry lastLog = StandardLog.get().last();
 
             while (true) {
-                LogEntry entry = StandardLog.get().read(logIndex);
-
                 AppendEntriesReq request = AppendEntriesReq.builder()
                         .term(Consensus.get().getCurrentTerm())
                         .leaderId(node.getId())
-                        .prevLogIndex(entry.getLogIndex())
-                        .prevLogTerm(entry.getTerm())
+                        .prevLogIndex(lastLog.getLogIndex())
+                        .prevLogTerm(lastLog.getTerm())
                         .entries(new LogEntry[0])
                         .leaderCommit(Consensus.get().getCommitIndex())
                         .build();
@@ -45,8 +43,8 @@ public class HeartbeatTask extends TimerTask {
                     Consensus.get().updateCommit(i, Consensus.get().getCommitIndex());
                     break;
                 } else {
-                    logIndex--;
-                    Consensus.get().updateMatch(i, logIndex);
+                    int logIndex = (int) lastLog.getLogIndex();
+                    Consensus.get().updateMatch(i, --logIndex);
                 }
             }
         }
