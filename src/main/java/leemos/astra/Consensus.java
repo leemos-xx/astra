@@ -66,6 +66,10 @@ public class Consensus {
         return this.voteFor == null;
     }
 
+    public String getVoteFor() {
+        return this.voteFor;
+    }
+
     public void setCommitIndex(long commitIndex) {
         this.commitIndex = commitIndex;
     }
