@@ -52,14 +52,17 @@ public class RaftSceneImpl implements RaftScene {
     @Api(name = "appendEntries")
     @Override
     public AppendEntriesResp appendEntries(AppendEntriesReq request) {
-        // 如果心跳中Leader的任期比当前节点小，则通知Leader退位为Follower
+        // 如果日志请求中Leader的任期比当前节点小，则通知Leader退位为Follower
         if (request.getTerm() < Consensus.get().getCurrentTerm()) {
             return generateAppendEntriesResp(false);
         }
 
-        // 解决日志冲突，以Leader为准
+        // 判断当前节点是否可以追加请求中的log entries，如果与leader预期的prevLogIndex&prevLogTerm不符，
+        // 则返回追加日志失败
         LogEntry entry = StandardLog.get().read(request.getPrevLogIndex());
-        if (entry == null || entry.getTerm() != request.getPrevLogTerm()) {
+        if (entry == null) {
+            return generateAppendEntriesResp(false);
+        } else if (entry.getTerm() != request.getPrevLogTerm()){
             StandardLog.get().truncate(request.getPrevLogIndex());
             return generateAppendEntriesResp(false);
         }
@@ -68,13 +71,12 @@ public class RaftSceneImpl implements RaftScene {
             StandardLog.get().write(e);
         }
 
+        // 如果leader的commitId比较新，则更新自己的commitId
         if (request.getLeaderCommit() > Consensus.get().getCommitIndex()) {
-            for (long logIndex = Consensus.get().getCommitIndex() + 1; logIndex <= request.getLeaderCommit(); logIndex++) {
-                Consensus.get().setCommitIndex(logIndex);
-                StandardStateMachine.get().apply(StandardLog.get().read(logIndex));
-                Consensus.get().setLastApplied(logIndex);
-            }
+            commitLog(request.getLeaderCommit());
         }
+
+        Consensus.get().setCurrentTerm(request.getTerm());
 
         return generateAppendEntriesResp(true);
     }
@@ -87,19 +89,24 @@ public class RaftSceneImpl implements RaftScene {
             return generateAppendEntriesResp(false);
         }
 
+        // 如果leader的commitId比较新，则更新自己的commitId
         if (request.getLeaderCommit() > Consensus.get().getCommitIndex()) {
-            for (long logIndex = Consensus.get().getCommitIndex() + 1;
-                 logIndex <= request.getLeaderCommit() && logIndex <= StandardLog.get().last().getLogIndex(); logIndex++) {
-                Consensus.get().setCommitIndex(logIndex);
-                StandardStateMachine.get().apply(StandardLog.get().read(logIndex));
-                Consensus.get().setLastApplied(logIndex);
-            }
+            commitLog(request.getLeaderCommit());
         }
 
         EventBus.get().fireEvent(new Event(EventType.CONVERSION_TO_FOLLOWER));
         Consensus.get().setCurrentTerm(request.getTerm());
 
         return generateAppendEntriesResp(true);
+    }
+
+    private void commitLog(long commitIndex) {
+        for (long logIndex = Consensus.get().getCommitIndex() + 1;
+             logIndex <= commitIndex && logIndex <= StandardLog.get().last().getLogIndex(); logIndex++) {
+            Consensus.get().setCommitIndex(logIndex);
+            StandardStateMachine.get().apply(StandardLog.get().read(logIndex));
+            Consensus.get().setLastApplied(logIndex);
+        }
     }
 
     private AppendEntriesResp generateAppendEntriesResp(boolean success) {

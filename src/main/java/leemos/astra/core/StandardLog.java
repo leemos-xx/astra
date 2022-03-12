@@ -44,6 +44,9 @@ public class StandardLog implements Log {
 
     @Override
     public synchronized LogEntry read(long logIndex) {
+        if (!contains(logIndex)) {
+            return null;
+        }
         return entries.get((int) logIndex);
     }
 
