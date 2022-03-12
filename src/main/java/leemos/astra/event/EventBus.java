@@ -8,6 +8,13 @@ import leemos.astra.core.StandardStateMachine;
 
 import java.util.ArrayList;
 
+/**
+ * EventBus
+ *
+ * @author lihao
+ * @date 2022-03-12
+ * @version 1.0
+ */
 public class EventBus {
 
     private static volatile EventBus singleton;

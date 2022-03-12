@@ -10,6 +10,13 @@ import leemos.astra.rpc.AppendEntriesResp;
 
 import java.util.TimerTask;
 
+/**
+ * HeartbeatTask
+ *
+ * @author lihao
+ * @date 2022-03-12
+ * @version 1.0
+ */
 public class HeartbeatTask extends TimerTask {
 
     private StatefulNode node;

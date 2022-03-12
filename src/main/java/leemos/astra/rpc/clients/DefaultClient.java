@@ -10,6 +10,13 @@ import leemos.astra.rpc.RequestVoteResp;
 import leemos.orion.client.proxy.ClientProxy;
 import leemos.orion.client.rpc.OrionClient;
 
+/**
+ * EventListener
+ *
+ * @author lihao
+ * @date 2022-03-12
+ * @version 1.0
+ */
 public class DefaultClient implements Client {
 
     private String peer;
